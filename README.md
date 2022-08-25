@@ -1,6 +1,6 @@
 # discord-jukebox-v2
 
-Discord juke-box bot.  
+Discord Jukebox BOT🤖.  
 Running on Node.js (in TypeScript)
 
 ---
