@@ -1,0 +1,9 @@
+{
+  "bot": {
+    "id": "{Your Bot ID}",
+    "token": "{Your Bot Token}"
+  },
+  "server": {
+    "list": ["{ID of the server the bot is joining}"]
+  }
+}
