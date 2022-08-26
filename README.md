@@ -43,4 +43,16 @@ $ npm -v
     >
     > > 詳細な使用内容は `package.json` の `run-scripts` を参照
 -   discord.js
-    > [discord.js - Documentation](https://discord.js.org/#/docs/discord.js/main/general/welcome)
+    > [Discord.js - Documentation](https://discord.js.org/#/docs/discord.js/main/general/welcome)
+-   @discordjs/voice
+    > `Discord.js` 音声操作用ライブラリ
+-   @discordjs/opus
+    > `Discord.js` opus 音声再生用ライブラリ
+
+---
+
+### TODO
+
+- あるライブラリの関数を使用する際に、その関数の戻り値が複数（ここでは `string | number | boolean | undefined` とする）の場合、使用する側が `string` だけを許容したい場合はどう記述するのがベスト？
+    > 戻り値を `toString()` して `undefined` の場合はから文字列( `''` )とする？
+    > > `funcA()?.toString() || ''` みたいな？

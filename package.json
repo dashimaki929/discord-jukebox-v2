@@ -20,6 +20,8 @@
   },
   "homepage": "https://github.com/dashimaki929/discord-jukebox-v2#readme",
   "dependencies": {
+    "@discordjs/opus": "^0.8.0",
+    "@discordjs/voice": "^0.11.0",
     "@types/node": "^16.11.56",
     "discord.js": "^14.3.0",
     "nodemon": "^2.0.19",
