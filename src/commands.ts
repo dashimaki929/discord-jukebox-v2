@@ -9,9 +9,18 @@ import { getVoiceConnections, joinVoiceChannel } from '@discordjs/voice';
 import { Commands, BotSettings } from './typedef';
 
 export const commands: Commands = {
+    /**
+     * Ping Command
+     *      Used to check bot communication.
+     */
     ping: (interaction: CommandInteraction) => {
         interaction.reply('Pong!');
     },
+
+    /**
+     * Connect Command
+     *      Used to connect a bot to a voice channel.
+     */
     connect: async (interaction: CommandInteraction) => {
         const channelId =
             interaction.options.get('channel')?.value?.toString() || '';
@@ -19,7 +28,7 @@ export const commands: Commands = {
 
         if (voiceChannel) {
             if (!interaction.guild || !interaction.guildId) return;
-            
+
             joinVoiceChannel({
                 channelId,
                 guildId: interaction.guildId,
@@ -37,9 +46,14 @@ export const commands: Commands = {
             });
         }
     },
+
+    /**
+     * Disconnect Command
+     *      Used to disconnect the bot from the voice channel.
+     */
     disconnect: (interaction: CommandInteraction) => {
         if (!interaction.guildId) return;
-        
+
         const voiceConnection = getVoiceConnections().get(interaction.guildId);
         if (voiceConnection) {
             voiceConnection.destroy();
@@ -56,6 +70,11 @@ export const commands: Commands = {
     },
 };
 
+/**
+ * Register the command with the server
+ * 
+ * @param settings BotSettings
+ */
 export async function registSlashCommands(settings: BotSettings) {
     const rest = new REST({ version: '10' }).setToken(settings.token);
 

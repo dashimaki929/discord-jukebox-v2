@@ -43,11 +43,12 @@ $ npm -v
     >
     > > 詳細な使用内容は `package.json` の `run-scripts` を参照
 -   discord.js
-    > [Discord.js - Documentation](https://discord.js.org/#/docs/discord.js/main/general/welcome)
+    > [discord.js - Documentation](https://discord.js.org/#/docs/discord.js/main/general/welcome)  
+    > [discord.js - Guide](https://discordjs.guide/)
 -   @discordjs/voice
-    > `Discord.js` 音声操作用ライブラリ
+    > `discord.js` 音声操作用ライブラリ
 -   @discordjs/opus
-    > `Discord.js` opus 音声再生用ライブラリ
+    > `discord.js` opus 音声再生用ライブラリ
 
 ---
 
