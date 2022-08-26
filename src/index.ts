@@ -1,14 +1,38 @@
 import * as fs from 'fs';
-import { Client, GatewayIntentBits } from 'discord.js';
+import { Client, CommandInteraction, GatewayIntentBits } from 'discord.js';
 
-const settings = JSON.parse(readFile('./config/settings.json'));
+import { Settings, Command } from './typedef';
+const settings: Settings = JSON.parse(readFile('./config/settings.json'));
+
+import { commands } from './commands';
 
 const client = new Client({
     intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages],
 });
 
 client.once('ready', async () => {
+    // Register slash-commands to the server
+    for (let serverId of settings.server.list) {
+        await client.application?.commands.set(
+            Object.keys(commands).map((name) => {
+                const command: Command = commands[name];
+                return {
+                    name: command.name,
+                    description: command.description,
+                    options: command.options,
+                };
+            }),
+            serverId
+        );
+    }
+
     console.log('Bot "discord-jukebox-v2" has successfully started!');
+});
+
+client.on('interactionCreate', interaction => {
+    if (interaction.isCommand()) {
+        commands[interaction.commandName].execute(interaction);
+    }
 });
 
 client.login(settings.bot.token);
