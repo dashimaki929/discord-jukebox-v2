@@ -10,6 +10,9 @@ const client = new Client({
     intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages],
 });
 
+/**
+ * Execute at bot startup
+ */
 client.once('ready', async () => {
     // Register slash-commands to the server
     for (let serverId of settings.server.list) {
@@ -17,7 +20,7 @@ client.once('ready', async () => {
             Object.keys(commands).map((name) => {
                 const command: Command = commands[name];
                 return {
-                    name: command.name,
+                    name,
                     description: command.description,
                     options: command.options,
                 };

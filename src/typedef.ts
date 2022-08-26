@@ -15,7 +15,6 @@ export type Commands = {
 }
 
 export type Command = {
-    name: string;
     description: string;
     options: CommandOption[];
     execute(interaction: CommandInteraction): void;

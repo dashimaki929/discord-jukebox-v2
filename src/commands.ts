@@ -3,7 +3,6 @@ import { Commands } from './typedef';
 
 export const commands: Commands = {
     ping: {
-        name: 'ping',
         description: '🔌 疎通確認',
         options: [],
         execute: async (interaction: CommandInteraction) => {
