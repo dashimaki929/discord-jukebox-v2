@@ -5,12 +5,12 @@ import {
     SlashCommandBuilder,
     ChannelType,
 } from 'discord.js';
-import { joinVoiceChannel } from '@discordjs/voice';
+import { getVoiceConnections, joinVoiceChannel } from '@discordjs/voice';
 import { Commands, BotSettings } from './typedef';
 
 export const commands: Commands = {
-    ping: async (interaction: CommandInteraction) => {
-        await interaction.reply('Pong!');
+    ping: (interaction: CommandInteraction) => {
+        interaction.reply('Pong!');
     },
     connect: async (interaction: CommandInteraction) => {
         const channelId =
@@ -19,6 +19,7 @@ export const commands: Commands = {
 
         if (voiceChannel) {
             if (!interaction.guild || !interaction.guildId) return;
+            
             joinVoiceChannel({
                 channelId,
                 guildId: interaction.guildId,
@@ -32,6 +33,23 @@ export const commands: Commands = {
         } else {
             interaction.reply({
                 content: '⚠ 指定されたボイスチャンネルが存在しません。',
+                ephemeral: true,
+            });
+        }
+    },
+    disconnect: (interaction: CommandInteraction) => {
+        if (!interaction.guildId) return;
+        
+        const voiceConnection = getVoiceConnections().get(interaction.guildId);
+        if (voiceConnection) {
+            voiceConnection.destroy();
+            interaction.reply({
+                content: '🔴 ボイスチャンネルから切断しました。',
+                ephemeral: true,
+            });
+        } else {
+            interaction.reply({
+                content: '⚠ 接続中のボイスチャンネルが存在しません。',
                 ephemeral: true,
             });
         }
@@ -58,6 +76,10 @@ export async function registSlashCommands(settings: BotSettings) {
                             .setRequired(true)
                             .addChannelTypes(ChannelType.GuildVoice)
                     )
+                    .toJSON(),
+                new SlashCommandBuilder()
+                    .setName('disconnect')
+                    .setDescription('🔴 ボイスチャンネルから切断')
                     .toJSON(),
             ],
         });
