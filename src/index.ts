@@ -1,17 +1,21 @@
 import * as fs from 'fs';
 import { Client, GatewayIntentBits } from 'discord.js';
 
-import { BotSettings } from './typedef';
+import { Bots, BotSettings } from './typedef';
+const Bots: Bots = {};
 const settings: BotSettings = JSON.parse(readFile('./config/settings.json'));
+const playlist: string[] = readFile('./config/playlist.txt').split(/\r?\n/);
 
 import { commands, registSlashCommands } from './commands';
+import { Bot } from './bot';
 const client = new Client({
-    intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages],
+    intents: [
+        GatewayIntentBits.Guilds,
+        GatewayIntentBits.GuildMessages,
+        GatewayIntentBits.GuildVoiceStates
+    ],
 });
 
-/**
- * Execute at bot startup
- */
 client.once('ready', async () => {
     await registSlashCommands(settings);
 
@@ -19,8 +23,16 @@ client.once('ready', async () => {
 });
 
 client.on('interactionCreate', (interaction) => {
+    if (!interaction.guildId) return;
+    
+    let self = Bots[interaction.guildId];
+    if (!self) {
+        self = new Bot(playlist);
+        Bots[interaction.guildId] = self;
+    }
+
     if (interaction.isCommand()) {
-        commands[interaction.commandName](interaction);
+        commands[interaction.commandName](interaction, self);
     }
 });
 
@@ -36,6 +48,7 @@ function readFile(filepath: string): string {
 
     try {
         data = fs.readFileSync(filepath, 'utf-8');
+        console.debug(filepath);
         console.debug(data);
     } catch (e) {
         console.error(e);

@@ -49,11 +49,41 @@ $ npm -v
     > `discord.js` 音声操作用ライブラリ
 -   @discordjs/opus
     > `discord.js` opus 音声再生用ライブラリ
+-   ffmpeg
+    > 動画と音声を記録・変換・再生用
+-   ffmpeg-static
+    > `ffmpeg` の依存関係周りを解消
+-   tweetnacl
+    > 暗号化ライブラリ, `discord.js` 上で音声を再生するために必須
+-   ytdl-core
+    > YouTube リソース取得用ライブラリ
+-   discord-ytdl-core
+    > `discord.js` 用に扱いやすくした `ytdl` の拡張ライブラリ。
+    > > 内部で `ffmpeg` を使用した引数設定を実装している。
+
+### トラブルシューティング
+
+-   ~~`sodium` のインストールに失敗した場合~~
+    -   以下コマンドを実行
+        ```
+        npm install --global --production --add-python-to-path windows-build-tools
+        ```
 
 ---
 
-### TODO
+## TODO
 
-- あるライブラリの関数を使用する際に、その関数の戻り値が複数（ここでは `string | number | boolean | undefined` とする）の場合、使用する側が `string` だけを許容したい場合はどう記述するのがベスト？
+-   あるライブラリの関数を使用する際に、その関数の戻り値が複数（ここでは `string | number | boolean | undefined` とする）の場合、使用する側が `string` だけを許容したい場合はどう記述するのがベスト？
     > 戻り値を `toString()` して `undefined` の場合はから文字列( `''` )とする？
+    >
     > > `funcA()?.toString() || ''` みたいな？
+    > > > `funcA()! as string` のみたいな書き方がある
+
+-   ライフサイクル
+    - 音楽再生
+        1. ローカルのプレイリストを参照（事前にリストはシャッフルしてキューを作成）
+        2. ローカルにキャッシュがない楽曲の場合、ストリーミング再生を行う。
+            - ストリーミング再生を行っているバックタスクでストリームをローカルに格納する。
+            - この際、ffmpegによるラウドネス値の正規化を行う。
+            - ストリーム時の音声にフィルターが掛かっていないこと点、考慮が必要。
+        3. ローカルにキャッシュがある場合、そのままローカルの音源を再生する。
