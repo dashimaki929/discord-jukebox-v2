@@ -6,6 +6,7 @@ import {
 
 export class Bot {
     static connectedGuildsCount = 0;
+    static cookies = null;
 
     player: AudioPlayer;
     playlist: string[];
@@ -34,7 +35,7 @@ export class Bot {
         Bot.connectedGuildsCount++;
     }
 
-    initMusicQueue() {
+    initMusicQueue(doShuffle: boolean = true) {
         const shuffle = ([...array]) => {
             for (let i = array.length - 1; i >= 0; i--) {
                 const j = Math.floor(Math.random() * (i + 1));
@@ -42,7 +43,12 @@ export class Bot {
             }
             return array;
         };
-        this.musicQueue = shuffle(this.playlist).filter(Boolean);
+
+        if (doShuffle) {
+            this.musicQueue = shuffle(this.playlist).filter(Boolean);
+        } else {
+            this.musicQueue = this.playlist.filter(Boolean);
+        }
     }
 
     getNextMusicHash() {

@@ -3,7 +3,9 @@ import { Client, GatewayIntentBits } from 'discord.js';
 
 import { Bots, BotSettings } from './typedef';
 const Bots: Bots = {};
-const settings: BotSettings = JSON.parse(readFile('./config/settings.json'));
+const BOT_SETTINGS: BotSettings = JSON.parse(
+    readFile('./config/bot_settings.json')
+);
 const playlist: string[] = readFile('./config/playlist.txt').split(/\r?\n/);
 
 import { commands, registSlashCommands } from './commands';
@@ -12,19 +14,22 @@ const client = new Client({
     intents: [
         GatewayIntentBits.Guilds,
         GatewayIntentBits.GuildMessages,
-        GatewayIntentBits.GuildVoiceStates
+        GatewayIntentBits.GuildVoiceStates,
     ],
 });
 
+const HEADER_SETTINGS = JSON.parse(readFile('./config/header_settings.json'));
+Bot.cookies = HEADER_SETTINGS.cookie.join('');
+
 client.once('ready', async () => {
-    await registSlashCommands(settings);
+    await registSlashCommands(BOT_SETTINGS);
 
     console.log('Bot "discord-jukebox-v2" has successfully started!');
 });
 
 client.on('interactionCreate', (interaction) => {
     if (!interaction.guildId) return;
-    
+
     let self = Bots[interaction.guildId];
     if (!self) {
         self = new Bot(playlist);
@@ -36,7 +41,7 @@ client.on('interactionCreate', (interaction) => {
     }
 });
 
-client.login(settings.token);
+client.login(BOT_SETTINGS.token);
 
 /**
  * Read file as text

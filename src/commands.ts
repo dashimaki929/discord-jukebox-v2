@@ -1,4 +1,10 @@
-import { createReadStream, createWriteStream, existsSync } from 'fs';
+import {
+    createReadStream,
+    createWriteStream,
+    existsSync,
+    statSync,
+    unlinkSync,
+} from 'fs';
 import { REST, Routes, SlashCommandBuilder, ChannelType } from 'discord.js';
 import {
     AudioPlayerStatus,
@@ -7,6 +13,7 @@ import {
     joinVoiceChannel,
     StreamType,
 } from '@discordjs/voice';
+import yts from 'yt-search';
 import ytdl from 'discord-ytdl-core';
 import { Commands, BotSettings } from './typedef';
 import { Bot } from './bot';
@@ -71,6 +78,10 @@ export const commands: Commands = {
         interaction.reply({ content, ephemeral: true });
     },
 
+    /**
+     * Play Command
+     *      Used to add songs to the queue.
+     */
     play: (interaction, self) => {
         if (!interaction.guildId) return;
 
@@ -78,12 +89,12 @@ export const commands: Commands = {
 
         const voiceConnection = getVoiceConnections().get(interaction.guildId);
         if (voiceConnection) {
-            const url = interaction.options.get('url')?.value! as string;
-            if (url && ytdl.validateURL(url)) {
+            const url = interaction.options.get('video')?.value! as string;
+            if (url) {
                 const hash = url.match(/[\w-]{11}/);
                 if (hash) {
                     self.musicQueue.unshift(hash[0]);
-                    _download(hash[0]);
+                    _download(self.musicQueue[0]);
 
                     content = `🎵 楽曲をキューに追加しました。\nhttps://www.youtube.com/watch?v=${hash}`;
                 } else {
@@ -91,6 +102,82 @@ export const commands: Commands = {
                 }
             } else {
                 content = '⚠ YouTube の URL を指定してください';
+            }
+        } else {
+            content = '⚠ 接続中のボイスチャンネルが存在しません。';
+        }
+
+        interaction.reply({ content, ephemeral: true });
+    },
+
+    /**
+     * Playlist Command
+     *      Used to set up playlists from YouTube.
+     */
+    playlist: async (interaction, self) => {
+        if (!interaction.guildId) return;
+
+        let content = null;
+
+        const voiceConnection = getVoiceConnections().get(interaction.guildId);
+        if (voiceConnection) {
+            const url = interaction.options.get('playlist')?.value! as string;
+            if (url) {
+                const hash = url.match(/[\w-]{34}/);
+                if (hash) {
+                    const playlist = await yts({ listId: hash[0] });
+                    if (playlist.videos.length) {
+                        self.playlist = playlist.videos.map(
+                            (video) => video.videoId
+                        );
+                        self.initMusicQueue(false);
+                        _download(self.musicQueue[0]);
+
+                        interaction.reply(
+                            `🎶 プレイリスト \`${playlist.title}\` を設定しました。\n${playlist.url}`
+                        );
+                    } else {
+                        content =
+                            '⚠ プレイリストが空か、再生可能な曲がありません。';
+                    }
+                } else {
+                    content = '⚠ 指定された URL の形式が正しくありません。';
+                }
+            } else {
+                content = '⚠ YouTube の URL を指定してください';
+            }
+        } else {
+            content = '⚠ 接続中のボイスチャンネルが存在しません。';
+        }
+
+        if (content) {
+            interaction.reply({ content, ephemeral: true });
+        }
+    },
+
+    /**
+     * Search Command
+     *      Used to search for songs from Youtube and add them to the queue.
+     */
+    search: async (interaction, self) => {
+        if (!interaction.guildId) return;
+
+        let content = null;
+
+        const voiceConnection = getVoiceConnections().get(interaction.guildId);
+        if (voiceConnection) {
+            const word = interaction.options.get('searchword')
+                ?.value! as string;
+            if (word) {
+                const query = await yts(word);
+                const video = query.videos[0];
+
+                self.musicQueue.unshift(video.videoId);
+                _download(self.musicQueue[0]);
+
+                content = `🎵 楽曲をキューに追加しました。\n${video.url}`;
+            } else {
+                content = '⚠ 検索ワードを指定してください。';
             }
         } else {
             content = '⚠ 接続中のボイスチャンネルが存在しません。';
@@ -144,6 +231,29 @@ export const commands: Commands = {
 
         interaction.reply({ content, ephemeral: true });
     },
+
+    /**
+     * Skip Command
+     *      Used for shuffle playback of the current playlist.
+     */
+    shuffle: (interaction, self) => {
+        if (!interaction.guildId) return;
+
+        let content = null;
+
+        const voiceConnection = getVoiceConnections().get(interaction.guildId);
+        if (voiceConnection) {
+            self.initMusicQueue(true);
+            self.playlist = [...self.musicQueue];
+            _download(self.musicQueue[0]);
+
+            content = '🔀 現在のプレイリストをシャッフル再生します。';
+        } else {
+            content = '⚠ 接続中のボイスチャンネルが存在しません。';
+        }
+
+        interaction.reply({ content, ephemeral: true });
+    },
 };
 
 /**
@@ -178,21 +288,47 @@ export async function registSlashCommands(settings: BotSettings) {
                     .toJSON(),
                 new SlashCommandBuilder()
                     .setName('play')
-                    .setDescription('🎵 URLを指定して音楽を再生')
+                    .setDescription('🎵 URL を指定して音楽を再生')
                     .addStringOption((option) =>
                         option
-                            .setName('url')
-                            .setDescription('YouTube URL or hash')
+                            .setName('video')
+                            .setDescription('YouTube video URL or Hash')
+                            .setRequired(true)
+                    )
+                    .toJSON(),
+                new SlashCommandBuilder()
+                    .setName('playlist')
+                    .setDescription('🎶 YouTube からプレイリストを設定')
+                    .addStringOption((option) =>
+                        option
+                            .setName('playlist')
+                            .setDescription('YouTube playlist URL or Hash')
+                            .setRequired(true)
+                    )
+                    .toJSON(),
+                new SlashCommandBuilder()
+                    .setName('search')
+                    .setDescription('🔍 YouTube 動画検索')
+                    .addStringOption((option) =>
+                        option
+                            .setName('searchword')
+                            .setDescription('Search words from youtube')
                             .setRequired(true)
                     )
                     .toJSON(),
                 new SlashCommandBuilder()
                     .setName('pause')
-                    .setDescription('⏯ 再生中の曲を一時停止 / 一時停止中の曲を再開')
+                    .setDescription(
+                        '⏯ 再生中の曲を一時停止 / 一時停止中の曲を再開'
+                    )
                     .toJSON(),
                 new SlashCommandBuilder()
                     .setName('skip')
                     .setDescription('⏭️ 現在の曲をスキップ')
+                    .toJSON(),
+                new SlashCommandBuilder()
+                    .setName('shuffle')
+                    .setDescription('⏭️ 現在のプレイリストをシャッフル再生')
                     .toJSON(),
             ],
         });
@@ -270,6 +406,11 @@ function _download(hash: string): Promise<string> {
                 opusEncoded: false,
                 fmt: 'mp3',
                 encoderArgs: ['-af', 'loudnorm'],
+                requestOptions: {
+                    headers: {
+                        Cookie: Bot.cookies,
+                    },
+                },
             })
                 .on('end', () => {
                     resolve(filepath);
