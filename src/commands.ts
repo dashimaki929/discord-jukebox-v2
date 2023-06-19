@@ -1,10 +1,4 @@
-import {
-    createReadStream,
-    createWriteStream,
-    existsSync,
-    statSync,
-    unlinkSync,
-} from 'fs';
+import { createReadStream, createWriteStream, existsSync } from 'fs';
 import { REST, Routes, SlashCommandBuilder, ChannelType } from 'discord.js';
 import {
     AudioPlayerStatus,
@@ -48,6 +42,9 @@ export const commands: Commands = {
             });
 
             content = `🟢 ボイスチャンネル（\`${voiceChannel.name}\`）に接続しました。`;
+
+            // set 1hour time signal.
+            _setTimeSignal(self);
 
             _play(interaction.guildId, self);
         } else {
@@ -346,13 +343,13 @@ async function _play(guildId: string, self: Bot) {
     const stream = await _stream(self);
     if (!stream) return;
 
-    const resource = createAudioResource(stream, {
+    self.audioResource = createAudioResource(stream, {
         inputType: StreamType.WebmOpus,
         inlineVolume: true,
     });
-    resource.volume?.setVolume(self.volume);
+    self.audioResource.volume?.setVolume(self.volume);
 
-    self.player.play(resource);
+    self.player.play(self.audioResource);
 
     self.player.removeAllListeners();
 
@@ -423,4 +420,39 @@ function _download(hash: string): Promise<string> {
             resolve(filepath);
         }
     });
+}
+
+function _setTimeSignal(self: Bot) {
+    const nextTimeSignalDate = new Date();
+    nextTimeSignalDate.setHours(nextTimeSignalDate.getHours() + 1);
+    nextTimeSignalDate.setMinutes(0);
+    nextTimeSignalDate.setSeconds(0);
+    nextTimeSignalDate.setMilliseconds(0);
+
+    /* Used during timesignal testing */
+    // nextTimeSignalDate.setMinutes(nextTimeSignalDate.getMinutes() + 1);
+    // nextTimeSignalDate.setSeconds(0);
+    // nextTimeSignalDate.setMilliseconds(0);
+
+    const untilNextTimeSignalMS =
+        Number(nextTimeSignalDate) - Number(new Date());
+
+    return new Promise((resolve) => {
+        self.timeSignalTO = setTimeout(() => {
+            _playTimeSignal(self);
+            _setTimeSignal(self);
+            resolve(true);
+        }, untilNextTimeSignalMS);
+    });
+}
+
+function _playTimeSignal(self: Bot) {
+    const stream = createReadStream('./mp3/jihou.mp3');
+    self.audioResource = createAudioResource(stream, {
+        inputType: StreamType.WebmOpus,
+        inlineVolume: true,
+    });
+    self.audioResource.volume?.setVolume(self.volume);
+
+    self.player.play(self.audioResource);
 }

@@ -1,5 +1,6 @@
 import {
     AudioPlayer,
+    AudioResource,
     createAudioPlayer,
     NoSubscriberBehavior,
 } from '@discordjs/voice';
@@ -12,6 +13,8 @@ export class Bot {
     playlist: string[];
     musicQueue: string[];
     volume: number;
+    audioResource: AudioResource | null;
+    timeSignalTO: NodeJS.Timeout | null;
 
     isPlaying: boolean;
 
@@ -25,6 +28,8 @@ export class Bot {
         this.playlist = playlist;
         this.musicQueue = [];
         this.volume = volume / 100;
+        this.audioResource = null;
+        this.timeSignalTO = null;
 
         this.isPlaying = false;
 
